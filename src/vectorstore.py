@@ -7,6 +7,7 @@ from typing import List, Dict, Any, TypedDict
 import requests
 from dotenv import load_dotenv
 from urllib.parse import urlparse
+import ipaddress
 load_dotenv()
 
 embedding_model = os.environ.get("EMBEDDING_MODEL")
@@ -44,28 +45,41 @@ class VectorStoreManager:
         Descarga un libro desde una URL (PDF o TXT), lo guarda localmente, lo carga y lo indexa.
         Si no se pasa url, usa BOOK_URL global.
         """
+        def is_safe_url(url):
+            parsed = urlparse(url)
+            if parsed.scheme not in ("http", "https"):
+                return False  # Not a remote URL
+            hostname = parsed.hostname
+            try:
+                ip = ipaddress.ip_address(hostname)
+                if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                    return False
+            except ValueError:
+                if hostname in ("localhost", "127.0.0.1", "::1"):
+                    return False
+            return True
+
         if url is None and not book_url:
             raise ValueError("No URL provided and book_url is not set.")
         if url is None:
             url = book_url
-        if not local_path:
-            if url is None:
-                raise ValueError("URL cannot be None when determining file extension.")
-            ext = url.split('.')[-1].split('?')[0].lower()
-            local_path = f"downloaded_book.{ext}"
-        # Sanitize local_path to prevent path traversal
-        local_path = os.path.basename(local_path)
 
-        # Detect if url is a remote URL or a local file
         parsed = urlparse(url)
         if parsed.scheme in ("http", "https"):
-            response = requests.get(url)
+            if not is_safe_url(url):
+                raise ValueError("Unsafe URL: points to a local/private address.")
+            response = requests.get(url, timeout=10)
             response.raise_for_status()
+            if not local_path:
+                ext = url.split('.')[-1].split('?')[0].lower()
+                local_path = f"downloaded_book.{ext}"
+            local_path = os.path.basename(local_path)
             with open(local_path, 'wb') as f:
                 f.write(response.content)
-        else:
-            # Local file: just use the path directly
+        elif os.path.isfile(url):
             local_path = url
+        else:
+            raise ValueError("Invalid file path or URL.")
 
         documents = self.load_documents(local_path)
         self.build_vectorstore(documents)

@@ -1,5 +1,6 @@
 import os
 from typing import Dict
+from src.vectorstore import VectorStoreManager
 
 # Variables de entorno globales para el modelo LLM
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -7,6 +8,9 @@ OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-3.5-turbo")
 
 # Simulate a simple keyword-based planner
 RETRIEVAL_KEYWORDS = ["find", "search", "retrieve", "context", "information", "explain", "details"]
+
+# Inicializa el vector_manager globalmente para uso en los agentes
+vector_manager = VectorStoreManager()
 
 
 def planner_agent(state: Dict) -> Dict:
@@ -27,9 +31,12 @@ def rewriter_agent(state: Dict) -> Dict:
 
 
 def retriever_agent(state: Dict) -> Dict:
-    # Simulate retrieval (replace with real vectorstore in production)
+    # Recupera documentos relevantes usando el vectorstore real
     query = state.get("query", "")
-    retrieved_docs = [f"Relevant doc for: {query}"]
+    if "rewritten_query" in state:
+        query = state["rewritten_query"]
+    # Recupera los documentos usando el vector_manager real
+    retrieved_docs = [doc.page_content for doc in vector_manager.retrieve(query)]
     state["retrieved_docs"] = retrieved_docs
     return state
 
