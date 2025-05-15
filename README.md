@@ -1,65 +1,79 @@
-# Multi-Agent RAG System (LangGraph)
+# LangGraph Multi-Turn Chatbot Example
 
-## Overview
+## Descripción
 
-This project implements a Retrieval-Augmented Generation (RAG) system using collaborative agents and LangGraph. The system interprets user queries, retrieves relevant information, synthesizes answers, and iterates for clarity.
+Este repositorio es un ejemplo educativo de cómo construir un **chatbot conversacional multi-turno** utilizando [LangGraph](https://langchain-ai.github.io/langgraph/) y modelos de lenguaje (LLM). Permite interactuar con el bot en la terminal, manteniendo el historial de la conversación y generando respuestas dinámicas.
 
-## Architecture
+## Características principales
 
-- **PlannerAgent**: Decides if the query is direct or requires retrieval.
-- **RewriterAgent**: Reformulates the query for better retrieval.
-- **RetrieverAgent**: Searches for relevant information in a vector store (FAISS).
-- **SynthesizerAgent**: Generates answers using context and the query.
-- **CriticAgent**: Evaluates if the answer is sufficient; can trigger further retrieval if needed.
+- **Chat multi-turno:** Mantiene el historial de mensajes y responde de manera contextual.
+- **Integración con LLM:** Utiliza modelos como OpenAI GPT para generar respuestas.
+- **Arquitectura modular:** Separación clara entre vectorstore, agentes y grafo conversacional.
+- **Extensible:** Base sólida para agregar herramientas, memoria, o agentes adicionales.
+- **Buenas prácticas:** Tipado explícito, manejo de estado, y configuración segura por variables de entorno.
 
-## Workflow
+## Instalación
 
-1. User query enters the system.
-2. PlannerAgent decides the flow.
-3. If retrieval is needed, RewriterAgent and RetrieverAgent are invoked.
-4. SynthesizerAgent generates a response.
-5. CriticAgent evaluates the response and may loop back for more context.
-
-## Usage
-
-1. **Install dependencies:**
+1. Clona el repositorio y entra en la carpeta del proyecto.
+2. Instala las dependencias:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-2. **Prepare your documents:**
-   - Place your text documents in a directory or specify their path.
-   - Use the `VectorStoreManager` in `src/vectorstore.py` to load and index your documents with FAISS.
+3. Crea un archivo `.env` en la raíz con tus claves y configuración:
 
-3. **Run the RAG workflow:**
-   - Use the `build_rag_graph()` and `debug_run(query)` functions in `src/graph.py` to process queries and inspect the agent state transitions.
-   - Example:
+   ```env
+   OPENAI_API_KEY=tu_api_key
+   OPENAI_MODEL=gpt-3.5-turbo
+   EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+   BOOK_URL=https://ruta/a/tu/libro.pdf
+   ```
 
-     ```python
-     from src.graph import debug_run
-     debug_run("Find information about LangGraph architecture")
-     ```
+## Uso interactivo (modo chat)
 
-4. **Visualize the agent graph:**
-   - Generate a PNG of the workflow graph:
+Ejecuta el bot en la terminal:
 
-     ```python
-     from src.graph import draw_graph_png
-     draw_graph_png()
-     # This will create 'multi_agent_rag.png' in your working directory.
-     ```
+```bash
+python main.py
+```
 
-## Agent Responsibilities
+Interactúa escribiendo tus preguntas. Escribe `salir`, `exit` o `quit` para terminar la conversación.
 
-- **PlannerAgent:** Analyzes the query and decides if it can be answered directly or requires retrieval.
-- **RewriterAgent:** Reformulates ambiguous or complex queries to optimize retrieval.
-- **RetrieverAgent:** Retrieves relevant documents from the FAISS vector store.
-- **SynthesizerAgent:** Synthesizes a response using the query and retrieved context.
-- **CriticAgent:** Evaluates the response; if insufficient, triggers another retrieval/synthesis loop.
+**Ejemplo:**
 
-## Notes
+```bash
+Tú: ¿Quién es el personaje principal?
+Bot: El personaje principal es...
+Tú: ¿Dónde ocurre la historia?
+Bot: La historia ocurre en...
+Tú: salir
+Adiós!
+```
 
-- Edge cases (ambiguous or incomplete queries) are handled in the agent logic.
-- No unit tests are included by user request.
-- All project rules and guidelines are in the `cursor_project_rules` folder.
+## Arquitectura
+
+- **VectorStoreManager:** Gestiona la indexación y recuperación de documentos con FAISS y embeddings.
+- **Agentes:** Implementan la lógica de síntesis de respuestas usando LLM.
+- **Grafo conversacional:** Orquesta el flujo de mensajes y mantiene el historial.
+
+## Extensibilidad
+
+- Puedes agregar herramientas externas, memoria, o nuevos agentes siguiendo la arquitectura modular.
+- El grafo puede adaptarse para flujos más complejos, integración de APIs, o lógica condicional avanzada.
+
+## Buenas prácticas
+
+- Uso de tipado explícito (`TypedDict`, `Annotated`).
+- Separación de responsabilidades por módulo.
+- Configuración segura por variables de entorno.
+- Cumple con las recomendaciones de la [documentación oficial de LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/).
+
+## Recursos y referencias
+
+- [Documentación oficial de LangGraph](https://langchain-ai.github.io/langgraph/)
+- [Ejemplo de chat multi-turno en LangGraph](https://langchain-ai.github.io/langgraph/tutorials/introduction/)
+
+---
+
+Este repositorio es ideal para aprender, experimentar y construir asistentes conversacionales avanzados con LangGraph y LLMs.
