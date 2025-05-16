@@ -2,3 +2,5 @@
 faiss_index/
 .cursor/
 implementation-plan.md
+.venv/
+.vscode/
