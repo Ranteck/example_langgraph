@@ -11,16 +11,16 @@ RETRIEVAL_KEYWORDS = ["find", "search", "retrieve", "context", "information", "e
 
 # Inicializa el vector_manager globalmente para uso en los agentes
 vector_manager = VectorStoreManager()
+try:
+    vector_manager.load_vectorstore()
+except Exception:
+    pass
 
 
 def planner_agent(state: Dict) -> Dict:
-    query = state.get("query", "")
-    if any(keyword in query.lower() for keyword in RETRIEVAL_KEYWORDS):
-        state["planner_decision"] = "retrieve"
-        return {**state, "_next": "retrieve"}
-    else:
-        state["planner_decision"] = "direct"
-        return {**state, "_next": "direct"}
+    # Siempre forzar recuperación para cualquier pregunta
+    state["planner_decision"] = "retrieve"
+    return {**state, "_next": "retrieve"}
 
 
 def rewriter_agent(state: Dict) -> Dict:
@@ -31,11 +31,9 @@ def rewriter_agent(state: Dict) -> Dict:
 
 
 def retriever_agent(state: Dict) -> Dict:
-    # Recupera documentos relevantes usando el vectorstore real
     query = state.get("query", "")
     if "rewritten_query" in state:
         query = state["rewritten_query"]
-    # Recupera los documentos usando el vector_manager real
     retrieved_docs = [doc.page_content for doc in vector_manager.retrieve(query)]
     state["retrieved_docs"] = retrieved_docs
     return state
@@ -51,16 +49,27 @@ except ImportError:
 def synthesizer_agent(state: Dict) -> Dict:
     query = state.get("query", "")
     context = state.get("retrieved_docs", [])
-    if llm:
-        prompt = f"Pregunta: {query}\nContexto: {context[0] if context else ''}\nRespuesta:"
-        answer = llm.invoke(prompt)
-        state["answer"] = answer
+    if context:
+        joined_context = "\n\n".join(context)
+        prompt = (
+            f"Responde la siguiente pregunta SOLO usando la información del contexto proporcionado.\n"
+            f"Pregunta: {query}\n"
+            f"Contexto:\n{joined_context}\n"
+            f"Respuesta:"
+        )
     else:
-        if context:
-            answer = f"Synthesized answer for '{query}' with context: {context[0]}"
+        prompt = (
+            f"No se encontró información relevante en el documento para la pregunta: {query}"
+        )
+    if llm and context:
+        answer = llm.invoke(prompt)
+        # Si la respuesta es un objeto con 'content', extraer solo el texto
+        if hasattr(answer, 'content'):
+            state["answer"] = answer.content
         else:
-            answer = f"Direct answer for '{query}'"
-        state["answer"] = answer
+            state["answer"] = str(answer)
+    else:
+        state["answer"] = prompt
     return state
 
 

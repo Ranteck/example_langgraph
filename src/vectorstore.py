@@ -11,7 +11,16 @@ import ipaddress
 load_dotenv()
 
 embedding_model = os.environ.get("EMBEDDING_MODEL")
+if embedding_model:
+    embedding_model = embedding_model.strip().replace('"', '')
+if not embedding_model:
+    raise ValueError("La variable EMBEDDING_MODEL no está definida o está vacía en el entorno.")
+
 book_url = os.environ.get("BOOK_URL")
+if book_url:
+    book_url = book_url.strip().replace('"', '')
+if not book_url:
+    raise ValueError("La variable BOOK_URL no está definida o está vacía en el entorno.")
 
 class VectorStoreManager:
     def __init__(self, persist_path: str = "faiss_index"):
@@ -33,7 +42,7 @@ class VectorStoreManager:
         self.vectorstore.save_local(self.persist_path)
 
     def load_vectorstore(self):
-        self.vectorstore = FAISS.load_local(self.persist_path, self.embeddings)
+        self.vectorstore = FAISS.load_local(self.persist_path, self.embeddings, allow_dangerous_deserialization=True)
 
     def retrieve(self, query: str, k: int = 5) -> List[Document]:
         if not self.vectorstore:
