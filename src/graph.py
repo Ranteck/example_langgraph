@@ -46,6 +46,8 @@ def planner_condition(state: RAGState):
 def critic_condition(state: RAGState):
     if state.get("critic_decision") == "refine":
         return "RetrieverAgent"
+    if state.get("critic_decision") == "satisfactory":
+        return END
     return END
 
 # Construcción del grafo multi-agente RAG
